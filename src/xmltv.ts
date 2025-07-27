@@ -1,5 +1,4 @@
-// xmltv.ts
-import type { GridApiResponse } from "./tvlistings.js"; // Make sure this path is correct
+import type { GridApiResponse } from "./tvlistings.js";
 
 export function escapeXml(unsafe: string): string {
   return unsafe
@@ -11,8 +10,6 @@ export function escapeXml(unsafe: string): string {
 }
 
 export function formatDate(dateStr: string): string {
-  // Input: "2025-07-18T19:00:00Z"
-  // Output: "20250718190000 +0000"
   const d = new Date(dateStr);
   const pad = (n: number) => n.toString().padStart(2, "0");
   const YYYY = d.getUTCFullYear();
@@ -44,11 +41,10 @@ export function buildChannelsXml(data: GridApiResponse): string {
     }
 
     if (channel.thumbnail) {
-      xml += `    <icon src="${escapeXml(
-        channel.thumbnail.startsWith("http")
+      const src = channel.thumbnail.startsWith("http")
           ? channel.thumbnail
-          : "https:" + channel.thumbnail,
-      )}" />\n`;
+          : "https:" + channel.thumbnail;
+      xml += `    <icon src="${escapeXml(src)}" />\n`;
     }
 
     xml += "  </channel>\n";
@@ -87,7 +83,6 @@ export function buildProgramsXml(data: GridApiResponse): string {
         xml += `    <desc>${escapeXml(event.program.shortDesc)}</desc>\n`;
       }
 
-      // --- THIS IS THE CRITICAL BLOCK THAT MUST BE PRESENT AND UNCHANGED ---
       if (event.program.genres && event.program.genres.length > 0) {
         const sortedGenres = [...event.program.genres].sort((a, b) => a.localeCompare(b));
         for (const genre of sortedGenres) {
@@ -95,7 +90,6 @@ export function buildProgramsXml(data: GridApiResponse): string {
           xml += `    <category lang="en">${escapeXml(capitalizedGenre)}</category>\n`;
         }
       }
-      // ---------------------------------------------------------------------
 
       if (event.rating) {
         xml += `    <rating system="MPAA"><value>${escapeXml(
@@ -155,7 +149,6 @@ export function buildProgramsXml(data: GridApiResponse): string {
         const seasonNum = parseInt(event.program.season, 10);
         const episodeNum = parseInt(event.program.episode, 10);
 
-        // Apply zero-based indexing for xmltv_ns
         if (
           !isNaN(seasonNum) && !isNaN(episodeNum) &&
           seasonNum >= 1 &&
