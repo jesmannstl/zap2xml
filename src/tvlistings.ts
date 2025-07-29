@@ -59,7 +59,7 @@ function buildUrl(time: number, timespan: number): string {
     postalCode: config.postalCode,
     isOverride: "true",
     pref: config.pref + "16,128" || "16,128",
-    aid: "orbebb",
+    aid: "chi",
     languagecode: "en-us",
     time: time.toString(),
     device: "X",
