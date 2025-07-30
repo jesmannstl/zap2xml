@@ -35,6 +35,19 @@ services:
     restart: unless-stopped
 ```
 
+#### docker run
+
+For a simple Docker run command:
+
+```bash
+docker run -d --name zap2xml \
+  -v /path/to/output:/xmltv \
+  -e OUTPUT_FILE=/xmltv/xmltv.xml \
+  ghcr.io/jef/zap2xml:latest
+```
+
+**Note**: This is a Node.js application, not PHP. Do not use `php zap2xml.php` commands with this container.
+
 See [Environment variables](#environment-variables) for configuration options.
 
 ## Configuration
@@ -55,17 +68,17 @@ See [Environment variables](#environment-variables) for configuration options.
 
 ### Command line arguments
 
-| Argument       | Description                                                                                                     | Default                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `--lineupId`   | Lineup ID; Read more in the [Wiki](https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID)                    | `USA-lineupId-DEFAULT` (Attenna) |
-| `--timespan`   | Timespan in hours (up to 360 = 15 days, default: 6)                                                             | 6                                |
-| `--pref`       | User Preferences, comma separated list. `m` for showing music, `p` for showing pay-per-view, `h` for showing HD | (empty)                          |
-| `--country`    | Country code (default: `USA`)                                                                                   | USA                              |
-| `--postalCode` | Postal code of where shows are available.                                                                       | 30309                            |
-| `--userAgent`  | Custom user agent string for HTTP requests.                                                                     | Uses random if not specified     |
-| `--timezone`   | Timezone                                                                                                        | System default                   |
-| `--includeSeriesGenre`   | Add `<category>Series</category>` to programs without a category                                      |                                  |
-| `--outputFile` | Output file name (default: xmltv.xml)                                                                           | xmltv.xml                        |
+| Argument               | Description                                                                                                     | Default                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `--lineupId`           | Lineup ID; Read more in the [Wiki](https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID)                    | `USA-lineupId-DEFAULT` (Attenna) |
+| `--timespan`           | Timespan in hours (up to 360 = 15 days, default: 6)                                                             | 6                                |
+| `--pref`               | User Preferences, comma separated list. `m` for showing music, `p` for showing pay-per-view, `h` for showing HD | (empty)                          |
+| `--country`            | Country code (default: `USA`)                                                                                   | USA                              |
+| `--postalCode`         | Postal code of where shows are available.                                                                       | 30309                            |
+| `--userAgent`          | Custom user agent string for HTTP requests.                                                                     | Uses random if not specified     |
+| `--timezone`           | Timezone                                                                                                        | System default                   |
+| `--includeSeriesGenre` | Add `<category>Series</category>` to programs without a category                                                |                                  |
+| `--outputFile`         | Output file name (default: xmltv.xml)                                                                           | xmltv.xml                        |
 
 ## Setup and running in intervals
 
