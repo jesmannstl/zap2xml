@@ -77,11 +77,15 @@ export async function getTVListings(): Promise<GridApiResponse> {
   const now = Math.floor(Date.now() / 1000);
   const channelsMap: Map<string, Channel> = new Map();
 
+  console.log(`Fetching ${totalHours} hours of TV listings in ${chunkHours}-hour chunks...`);
+  
   const fetchPromises: Promise<void>[] = [];
 
   for (let offset = 0; offset < totalHours; offset += chunkHours) {
     const time = now + offset * 3600;
     const url = buildUrl(time, chunkHours);
+
+    console.log(`Fetching chunk ${offset / chunkHours + 1}/${Math.ceil(totalHours / chunkHours)}: ${url}`);
 
     const fetchPromise = fetch(url, {
       headers: {
@@ -98,6 +102,7 @@ export async function getTVListings(): Promise<GridApiResponse> {
         return response.json() as Promise<GridApiResponse>;
       })
       .then((chunkData: GridApiResponse) => {
+        console.log(`Chunk ${offset / chunkHours + 1} returned ${chunkData.channels.length} channels`);
         for (const newChannel of chunkData.channels) {
           const processedEvents = newChannel.events.map(event => {
             const newProgram = { ...event.program };
@@ -137,13 +142,16 @@ export async function getTVListings(): Promise<GridApiResponse> {
         }
       })
       .catch(fetchError => {
+        console.error(`Error fetching chunk ${offset / chunkHours + 1}:`, fetchError);
         throw fetchError;
       });
 
     fetchPromises.push(fetchPromise);
   }
 
+  console.log("Waiting for all chunks to complete...");
   await Promise.all(fetchPromises);
 
+  console.log(`Completed fetching TV listings. Total unique channels: ${channelsMap.size}`);
   return { channels: Array.from(channelsMap.values()) };
 }
