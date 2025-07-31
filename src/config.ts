@@ -36,7 +36,7 @@ export function getConfig() {
       process.argv
         .find((arg) => arg.startsWith("--timespan="))
         ?.split("=")[1] ||
-      "6",
+      "72",
     country:
       process.env["COUNTRY"] ||
       process.argv.find((arg) => arg.startsWith("--country="))?.split("=")[1] ||
