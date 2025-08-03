@@ -35,6 +35,19 @@ services:
     restart: unless-stopped
 ```
 
+#### docker run
+
+For a simple Docker run command:
+
+```bash
+docker run -d --name zap2xml \
+  -v /path/to/output:/xmltv \
+  -e OUTPUT_FILE=/xmltv/xmltv.xml \
+  ghcr.io/jef/zap2xml:latest
+```
+
+**Note**: This is a Node.js application, not PHP. Do not use `php zap2xml.php` commands with this container.
+
 See [Environment variables](#environment-variables) for configuration options.
 
 ## Configuration
