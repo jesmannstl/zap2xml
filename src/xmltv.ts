@@ -157,25 +157,25 @@ export function buildProgramsXml(data: GridApiResponse): string {
           xml += `    <episode-num system="xmltv_ns">${seasonNum - 1}.${episodeNum - 1}.</episode-num>\n`;
         }
       } else if (!event.program.season && event.program.episode) {
-  const nyFormatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
-  const parts = nyFormatter.formatToParts(new Date(event.startTime));
-  const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
-  const mm = parts.find(p => p.type === "month")?.value || "01";
-  const dd = parts.find(p => p.type === "day")?.value || "01";
-  const episodeIdx = parseInt(event.program.episode, 10);
-  if (!isNaN(episodeIdx)) {
-    xml += `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
-  }
-  const dateStr = `${year}${mm}${dd}`;
-  xml += `    <date>${dateStr}</date>
-`;
-}
-  if (event.program.originalAirDate || event.program.episodeAirDate) {
+        const nyFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        });
+        const parts = nyFormatter.formatToParts(new Date(event.startTime));
+        const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
+        const mm = parts.find(p => p.type === "month")?.value || "01";
+        const dd = parts.find(p => p.type === "day")?.value || "01";
+        const episodeIdx = parseInt(event.program.episode, 10);
+        if (!isNaN(episodeIdx)) {
+          xml += `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
+        }
+        const dateStr = `${year}${mm}${dd}`;
+        xml += `    <date>${dateStr}</date>\n`;
+      }
+
+      if (event.program.originalAirDate || event.program.episodeAirDate) {
         const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || '');
         if (!isNaN(airDate.getTime())) {
           const dateStr = airDate.toISOString().slice(0, 10).replace(/-/g, "");
@@ -189,10 +189,24 @@ export function buildProgramsXml(data: GridApiResponse): string {
         if (match) {
           xml += `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
         }
+
+        const nyFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        });
+        const parts = nyFormatter.formatToParts(new Date(event.startTime));
+        const year = parts.find(p => p.type === "year")?.value || "1970";
+        const mm = parts.find(p => p.type === "month")?.value || "01";
+        const dd = parts.find(p => p.type === "day")?.value || "01";
+        const dateStr = `${year}${mm}${dd}`;
+        xml += `    <date>${dateStr}</date>\n`;
       }
 
       if (event.program.seriesId && event.program.tmsId) {
-        xml += `    <url>https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&tmsId=${event.program.tmsId}</url>\n`;
+        const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${event.program.tmsId}`;
+        xml += `    <url>${encodedUrl}</url>\n`;
       }
 
       if (event.thumbnail) {
