@@ -197,11 +197,15 @@ export function buildProgramsXml(data: GridApiResponse): string {
           day: "2-digit"
         });
         const parts = nyFormatter.formatToParts(new Date(event.startTime));
-        const year = parts.find(p => p.type === "year")?.value || "1970";
+        const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
         const mm = parts.find(p => p.type === "month")?.value || "01";
         const dd = parts.find(p => p.type === "day")?.value || "01";
         const dateStr = `${year}${mm}${dd}`;
         xml += `    <date>${dateStr}</date>\n`;
+
+        const mmddNum = parseInt(`${mm}${dd}`, 10);
+        const adjustedMMDD = String(mmddNum - 1).padStart(4, '0');
+        xml += `    <episode-num system="xmltv_ns">${year - 1}.${adjustedMMDD}</episode-num>\n`;
       }
 
       if (event.program.seriesId && event.program.tmsId) {
