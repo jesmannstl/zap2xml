@@ -27,7 +27,7 @@ See [Command line arguments](#command-line-arguments) for configuration options.
 services:
   zap2xml:
     container_name: zap2xml
-    image: ghcr.io/jef/zap2xml:latest
+    image: ghcr.io/jesmannstl/zap2xml:latest
     environment:
       OUTPUT_FILE: /xmltv/xmltv.xml
     volumes:
@@ -103,5 +103,6 @@ You can run zap2xml in a Docker container. The `SLEEP_TIME` environment variable
 ### How do I get my Lineup ID?
 
 Visit https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID
+
 
 
