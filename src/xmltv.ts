@@ -1,4 +1,5 @@
 import type { GridApiResponse } from "./tvlistings.js";
+import { Command } from "commander";
 
 export function escapeXml(unsafe: string): string {
   return unsafe
@@ -21,6 +22,20 @@ export function formatDate(dateStr: string): string {
   return `${YYYY}${MM}${DD}${hh}${mm}${ss} +0000`;
 }
 
+const cli = new Command();
+cli
+  .option('--appendAsterisk', 'Append * to titles with <new /> or <live />')
+  .option('--lineupId <lineupId>', 'Lineup ID')
+  .option('--timespan <hours>', 'Timespan in hours (up to 360)', '6')
+  .option('--pref <prefs>', 'User Preferences, e.g. m,p,h')
+  .option('--country <code>', 'Country code', 'USA')
+  .option('--postalCode <zip>', 'Postal code', '30309')
+  .option('--userAgent <agent>', 'Custom user agent string')
+  .option('--timezone <zone>', 'Timezone')
+  .option('--outputFile <filename>', 'Output file name', 'xmltv.xml');
+cli.parse(process.argv);
+const options = cli.opts() as { [key: string]: any };
+
 export function buildChannelsXml(data: GridApiResponse): string {
   let xml = "";
 
@@ -29,21 +44,17 @@ export function buildChannelsXml(data: GridApiResponse): string {
     xml += `    <display-name>${escapeXml(channel.callSign)}</display-name>\n`;
 
     if (channel.affiliateName) {
-      xml += `    <display-name>${escapeXml(
-        channel.affiliateName,
-      )}</display-name>\n`;
+      xml += `    <display-name>${escapeXml(channel.affiliateName)}</display-name>\n`;
     }
 
     if (channel.channelNo) {
-      xml += `    <display-name>${escapeXml(
-        channel.channelNo,
-      )}</display-name>\n`;
+      xml += `    <display-name>${escapeXml(channel.channelNo)}</display-name>\n`;
     }
 
     if (channel.thumbnail) {
       const src = channel.thumbnail.startsWith("http")
-          ? channel.thumbnail
-          : "https:" + channel.thumbnail;
+        ? channel.thumbnail
+        : "https:" + channel.thumbnail;
       xml += `    <icon src="${escapeXml(src)}" />\n`;
     }
 
@@ -71,7 +82,13 @@ export function buildProgramsXml(data: GridApiResponse): string {
         channel.channelId,
       )}">\n`;
 
-      xml += `    <title>${escapeXml(event.program.title)}</title>\n`;
+      const isNew = event.flag?.includes("New");
+      const isLive = event.flag?.includes("Live");
+      let title = event.program.title;
+      if (options['appendAsterisk'] && (isNew || isLive)) {
+        title += " *";
+      }
+      xml += `    <title>${escapeXml(title)}</title>\n`;
 
       if (event.program.episodeTitle) {
         xml += `    <sub-title>${escapeXml(
@@ -97,25 +114,12 @@ export function buildProgramsXml(data: GridApiResponse): string {
         )}</value></rating>\n`;
       }
 
-      const isNew = event.flag?.includes("New");
-      const isLive = event.flag?.includes("Live");
+      if (isNew) xml += `    <new />\n`;
+      if (isLive) xml += `    <live />\n`;
+      if (event.flag?.includes("Premiere")) xml += `    <premiere />\n`;
+      if (event.flag?.includes("Finale")) xml += `    <last-chance />\n`;
 
-      if (isNew) {
-        xml += `    <new />\n`;
-      }
-      if (isLive) {
-        xml += `    <live />\n`;
-      }
-      if (event.flag?.includes("Premiere")) {
-        xml += `    <premiere />\n`;
-      }
-      if (event.flag?.includes("Finale")) {
-        xml += `    <last-chance />\n`;
-      }
-
-      if (
-        !isNew && !isLive && event.program.id && matchesPreviouslyShownPattern(event.program.id)
-      ) {
+      if (!isNew && !isLive && event.program.id && matchesPreviouslyShownPattern(event.program.id)) {
         xml += `    <previously-shown`;
         if (event.program.originalAirDate) {
           const date = convOAD(event.program.originalAirDate);
@@ -142,20 +146,53 @@ export function buildProgramsXml(data: GridApiResponse): string {
           `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
         )}</episode-num>\n`;
 
-        if (/..\d{8}\d{4}/.test(event.program.id)) {
+        if (/\.\d{8}\d{4}/.test(event.program.id)) {
           xml += `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`;
         }
 
         const seasonNum = parseInt(event.program.season, 10);
         const episodeNum = parseInt(event.program.episode, 10);
 
-        if (
-          !isNaN(seasonNum) && !isNaN(episodeNum) &&
-          seasonNum >= 1 &&
-          episodeNum >= 1
-        ) {
+        if (!isNaN(seasonNum) && !isNaN(episodeNum) && seasonNum >= 1 && episodeNum >= 1) {
           xml += `    <episode-num system="xmltv_ns">${seasonNum - 1}.${episodeNum - 1}.</episode-num>\n`;
         }
+      } else if (!event.program.season && event.program.episode) {
+  const nyFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  const parts = nyFormatter.formatToParts(new Date(event.startTime));
+  const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
+  const mm = parts.find(p => p.type === "month")?.value || "01";
+  const dd = parts.find(p => p.type === "day")?.value || "01";
+  const episodeIdx = parseInt(event.program.episode, 10);
+  if (!isNaN(episodeIdx)) {
+    xml += `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
+  }
+  const dateStr = `${year}${mm}${dd}`;
+  xml += `    <date>${dateStr}</date>
+`;
+}
+  if (event.program.originalAirDate || event.program.episodeAirDate) {
+        const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || '');
+        if (!isNaN(airDate.getTime())) {
+          const dateStr = airDate.toISOString().slice(0, 10).replace(/-/g, "");
+          xml += `    <date>${dateStr}</date>\n`;
+          xml += `    <episode-num system="original-air-date">${airDate.toISOString().replace("T", " ").split(".")[0]}</episode-num>\n`;
+        }
+      }
+
+      if (!event.program.episode && event.program.id) {
+        const match = event.program.id.match(/^(..\d{8})(\d{4})/);
+        if (match) {
+          xml += `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
+        }
+      }
+
+      if (event.program.seriesId && event.program.tmsId) {
+        xml += `    <url>https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&tmsId=${event.program.tmsId}</url>\n`;
       }
 
       if (event.thumbnail) {
@@ -176,8 +213,7 @@ export function buildXmltv(data: GridApiResponse): string {
   console.log("Building XMLTV file");
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml +=
-    '<tv generator-info-name="jef/zap2xml" generator-info-url="https://github.com/jef/zap2xml">\n';
+  xml += '<tv generator-info-name="jef/zap2xml" generator-info-url="https://github.com/jef/zap2xml">\n';
   xml += buildChannelsXml(data);
   xml += buildProgramsXml(data);
   xml += "</tv>\n";

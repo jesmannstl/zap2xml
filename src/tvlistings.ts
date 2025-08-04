@@ -14,6 +14,7 @@ export interface Program {
   seriesId: string;
   isGeneric: string;
   originalAirDate?: string;
+  episodeAirDate?: string;
   genres?: string[];
 }
 
