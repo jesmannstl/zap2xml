@@ -54,17 +54,18 @@ See [Environment variables](#environment-variables) for configuration options.
 
 ### Environment variables
 
-| Variable      | Description                                                                                                     | Default                          |
-| ------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `LINEUP_ID`   | Lineup ID; Read more in the [Wiki](https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID)                    | `USA-lineupId-DEFAULT` (Attenna) |
-| `TIMESPAN`    | Timespan in hours (up to 360 = 15 days, default: 6)                                                             | 6                                |
-| `PREF`        | User Preferences, comma separated list. `m` for showing music, `p` for showing pay-per-view, `h` for showing HD | (empty)                          |
-| `COUNTRY`     | Country code (default: `USA`)                                                                                   | USA                              |
-| `POSTAL_CODE` | Postal code of where shows are available.                                                                       | 30309                            |
-| `USER_AGENT`  | Custom user agent string for HTTP requests.                                                                     | Uses random if not specified     |
-| `TZ`          | Timezone                                                                                                        | System default                   |
-| `SLEEP_TIME`  | Sleep time before next run in seconds (default: 21600, Only used with Docker.)                                  | 21600                            |
-| `OUTPUT_FILE` | Output file name (default: xmltv.xml)                                                                           | xmltv.xml                        |
+| Variable          | Description                                                                                                     | Default                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `LINEUP_ID`       | Lineup ID; Read more in the [Wiki](https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID)                    | `USA-lineupId-DEFAULT` (Attenna) |
+| `TIMESPAN`        | Timespan in hours (up to 360 = 15 days, default: 6)                                                             | 6                                |
+| `PREF`            | User Preferences, comma separated list. `m` for showing music, `p` for showing pay-per-view, `h` for showing HD | (empty)                          |
+| `COUNTRY`         | Country code (default: `USA`)                                                                                   | USA                              |
+| `POSTAL_CODE`     | Postal code of where shows are available.                                                                       | 30309                            |
+| `USER_AGENT`      | Custom user agent string for HTTP requests.                                                                     | Uses random if not specified     |
+| `TZ`              | Timezone                                                                                                        | System default                   |
+| `SLEEP_TIME`      | Sleep time before next run in seconds (default: 21600, Only used with Docker.)                                  | 21600                            |
+| `OUTPUT_FILE`     | Output file name (default: xmltv.xml)                                                                           | xmltv.xml                        |
+| `APPEND_ASTERISK` | Set `TRUE` to add * to Programs that are New or Live                                                  | FALSE                            |
 
 ### Command line arguments
 

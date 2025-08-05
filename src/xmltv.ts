@@ -100,6 +100,8 @@ export function buildProgramsXml(data: GridApiResponse): string {
         xml += `    <desc>${escapeXml(event.program.shortDesc)}</desc>\n`;
       }
 
+      const genreSet = new Set(event.program.genres?.map(g => g.toLowerCase()) || []);
+
       if (event.program.genres && event.program.genres.length > 0) {
         const sortedGenres = [...event.program.genres].sort((a, b) => a.localeCompare(b));
         for (const genre of sortedGenres) {
@@ -137,7 +139,9 @@ export function buildProgramsXml(data: GridApiResponse): string {
         }
       }
 
-      if (event.program.season && event.program.episode) {
+      const skipXmltvNs = genreSet.has("movie") || genreSet.has("sports");
+
+      if (event.program.season && event.program.episode && !skipXmltvNs) {
         xml += `    <episode-num system="onscreen">${escapeXml(
           `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
         )}</episode-num>\n`;
@@ -156,7 +160,7 @@ export function buildProgramsXml(data: GridApiResponse): string {
         if (!isNaN(seasonNum) && !isNaN(episodeNum) && seasonNum >= 1 && episodeNum >= 1) {
           xml += `    <episode-num system="xmltv_ns">${seasonNum - 1}.${episodeNum - 1}.</episode-num>\n`;
         }
-      } else if (!event.program.season && event.program.episode) {
+      } else if (!event.program.season && event.program.episode && !skipXmltvNs) {
         const nyFormatter = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/New_York",
           year: "numeric",
@@ -203,9 +207,12 @@ export function buildProgramsXml(data: GridApiResponse): string {
         const dateStr = `${year}${mm}${dd}`;
         xml += `    <date>${dateStr}</date>\n`;
 
-        const mmddNum = parseInt(`${mm}${dd}`, 10);
-        const adjustedMMDD = String(mmddNum - 1).padStart(4, '0');
-        xml += `    <episode-num system="xmltv_ns">${year - 1}.${adjustedMMDD}</episode-num>\n`;
+        // add xmltv_ns for series with no season/episode, using MMDD-1 logic
+        if (!skipXmltvNs) {
+          const mmddNum = parseInt(`${mm}${dd}`, 10);
+          const mmddMinusOne = (mmddNum - 1).toString().padStart(4, '0');
+          xml += `    <episode-num system="xmltv_ns">${year - 1}.${mmddMinusOne}</episode-num>\n`;
+        }
       }
 
       if (event.program.seriesId && event.program.tmsId) {

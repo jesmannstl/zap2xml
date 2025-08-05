@@ -1,5 +1,10 @@
 import { UserAgent } from "./useragents.js";
 
+// Inject CLI flags from environment variables
+if (process.env["APPEND_ASTERISK"] === "true") {
+  process.argv.push("--appendAsterisk");
+}
+
 export function processLineupId(): string {
   const lineupId =
     process.env["LINEUP_ID"] ||
