@@ -150,6 +150,10 @@ export function buildProgramsXml(data: GridApiResponse): string {
           `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
         )}</episode-num>\n`;
 
+        if (/\.\d{8}\d{4}/.test(event.program.id)) {
+          xml += `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`;
+        }
+
         const seasonNum = parseInt(event.program.season, 10);
         const episodeNum = parseInt(event.program.episode, 10);
 
@@ -184,6 +188,12 @@ export function buildProgramsXml(data: GridApiResponse): string {
         }
       }
 
+      if (!event.program.episode && event.program.id) {
+        const match = event.program.id.match(/^(..\d{8})(\d{4})/);
+        if (match) {
+          xml += `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
+        }
+
         const nyFormatter = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/New_York",
           year: "numeric",
@@ -203,19 +213,8 @@ export function buildProgramsXml(data: GridApiResponse): string {
           const mmddMinusOne = (mmddNum - 1).toString().padStart(4, '0');
           xml += `    <episode-num system="xmltv_ns">${year - 1}.${mmddMinusOne}</episode-num>\n`;
         }
+      }
 
-
-        if (/\.\d{8}\d{4}/.test(event.program.id)) {
-          xml += `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`;
-        }
-
-        if (!event.program.episode && event.program.id) {
-          const match = event.program.id.match(/^(..\d{8})(\d{4})/);
-          if (match) {
-          xml += `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
-        }
-     }	
-	 
       if (event.program.seriesId && event.program.tmsId) {
         const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${event.program.tmsId}`;
         xml += `    <url>${encodedUrl}</url>\n`;
