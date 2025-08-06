@@ -25,6 +25,7 @@ export function formatDate(dateStr: string): string {
 const cli = new Command();
 cli
   .option('--appendAsterisk', 'Append * to titles with <new /> or <live />')
+  .option('--mediaportal', 'Prioritize xmltv_ns episode-num tags')
   .option('--lineupId <lineupId>', 'Lineup ID')
   .option('--timespan <hours>', 'Timespan in hours (up to 360)', '6')
   .option('--pref <prefs>', 'User Preferences, e.g. m,p,h')
@@ -140,25 +141,34 @@ export function buildProgramsXml(data: GridApiResponse): string {
       }
 
       const skipXmltvNs = genreSet.has("movie") || genreSet.has("sports");
+      const episodeNumTags = [];
 
       if (event.program.season && event.program.episode && !skipXmltvNs) {
-        xml += `    <episode-num system="onscreen">${escapeXml(
+        const onscreenTag = `    <episode-num system="onscreen">${escapeXml(
           `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
         )}</episode-num>\n`;
+        episodeNumTags.push(onscreenTag);
 
-        xml += `    <episode-num system="common">${escapeXml(
+        const commonTag = `    <episode-num system="common">${escapeXml(
           `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
         )}</episode-num>\n`;
+        episodeNumTags.push(commonTag);
 
         if (/\.\d{8}\d{4}/.test(event.program.id)) {
-          xml += `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`;
+          const ddProgIdTag = `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`;
+          episodeNumTags.push(ddProgIdTag);
         }
 
         const seasonNum = parseInt(event.program.season, 10);
         const episodeNum = parseInt(event.program.episode, 10);
 
         if (!isNaN(seasonNum) && !isNaN(episodeNum) && seasonNum >= 1 && episodeNum >= 1) {
-          xml += `    <episode-num system="xmltv_ns">${seasonNum - 1}.${episodeNum - 1}.</episode-num>\n`;
+          const xmltvNsTag = `    <episode-num system="xmltv_ns">${seasonNum - 1}.${episodeNum - 1}.</episode-num>\n`;
+          if (options['mediaportal']) {
+            episodeNumTags.unshift(xmltvNsTag);
+          } else {
+            episodeNumTags.push(xmltvNsTag);
+          }
         }
       } else if (!event.program.season && event.program.episode && !skipXmltvNs) {
         const nyFormatter = new Intl.DateTimeFormat("en-US", {
@@ -173,25 +183,20 @@ export function buildProgramsXml(data: GridApiResponse): string {
         const dd = parts.find(p => p.type === "day")?.value || "01";
         const episodeIdx = parseInt(event.program.episode, 10);
         if (!isNaN(episodeIdx)) {
-          xml += `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
+          const xmltvNsTag = `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
+          if (options['mediaportal']) {
+            episodeNumTags.unshift(xmltvNsTag);
+          } else {
+            episodeNumTags.push(xmltvNsTag);
+          }
         }
         const dateStr = `${year}${mm}${dd}`;
         xml += `    <date>${dateStr}</date>\n`;
-      }
-
-      if (event.program.originalAirDate || event.program.episodeAirDate) {
-        const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || '');
-        if (!isNaN(airDate.getTime())) {
-          const dateStr = airDate.toISOString().slice(0, 10).replace(/-/g, "");
-          xml += `    <date>${dateStr}</date>\n`;
-          xml += `    <episode-num system="original-air-date">${airDate.toISOString().replace("T", " ").split(".")[0]}</episode-num>\n`;
-        }
-      }
-
-      if (!event.program.episode && event.program.id) {
+      } else if (!event.program.episode && event.program.id) {
         const match = event.program.id.match(/^(..\d{8})(\d{4})/);
         if (match) {
-          xml += `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
+          const ddProgIdTag = `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
+          episodeNumTags.push(ddProgIdTag);
         }
 
         const nyFormatter = new Intl.DateTimeFormat("en-US", {
@@ -207,11 +212,26 @@ export function buildProgramsXml(data: GridApiResponse): string {
         const dateStr = `${year}${mm}${dd}`;
         xml += `    <date>${dateStr}</date>\n`;
 
-        // add xmltv_ns for series with no season/episode, using MMDD-1 logic
         if (!skipXmltvNs) {
           const mmddNum = parseInt(`${mm}${dd}`, 10);
           const mmddMinusOne = (mmddNum - 1).toString().padStart(4, '0');
-          xml += `    <episode-num system="xmltv_ns">${year - 1}.${mmddMinusOne}</episode-num>\n`;
+          const xmltvNsTag = `    <episode-num system="xmltv_ns">${year - 1}.${mmddMinusOne}.</episode-num>\n`;
+          if (options['mediaportal']) {
+            episodeNumTags.unshift(xmltvNsTag);
+          } else {
+            episodeNumTags.push(xmltvNsTag);
+          }
+        }
+      }
+
+      xml += episodeNumTags.join("");
+
+      if (event.program.originalAirDate || event.program.episodeAirDate) {
+        const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || '');
+        if (!isNaN(airDate.getTime())) {
+          const dateStr = airDate.toISOString().slice(0, 10).replace(/-/g, "");
+          xml += `    <date>${dateStr}</date>\n`;
+          xml += `    <episode-num system="original-air-date">${airDate.toISOString().replace("T", " ").split(".")[0]}</episode-num>\n`;
         }
       }
 

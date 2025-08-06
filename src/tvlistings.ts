@@ -63,7 +63,7 @@ function buildUrl(time: number, timespan: number): string {
     aid: "chi",
     languagecode: "en-us",
     time: time.toString(),
-    device: "X",
+    device: config.lineupId.includes("X") ? "X" : "-",
     userId: "-",
   };
 
@@ -79,7 +79,7 @@ export async function getTVListings(): Promise<GridApiResponse> {
   const channelsMap: Map<string, Channel> = new Map();
 
   console.log(`Fetching ${totalHours} hours of TV listings in ${chunkHours}-hour chunks...`);
-  
+
   const fetchPromises: Promise<void>[] = [];
 
   for (let offset = 0; offset < totalHours; offset += chunkHours) {
