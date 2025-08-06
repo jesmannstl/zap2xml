@@ -6,6 +6,11 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 ## (2025-08-06)
 
+* Added Valid Country Codes that can be used
+* Added `--mediaportal` option to use `<episode-num system="xmltv_ns">` before others so Media Portal will display Season/Episode properly
+
+## (2025-08-05)
+
 ### Changes since previous release
 
 These changes are currently on the [jesmannstl/zap2xml](https://github.com/jesmannstl/zap2xml) fork
@@ -85,6 +90,7 @@ See [Environment variables](#environment-variables) for configuration options.
 | `SLEEP_TIME`      | Sleep time before next run in seconds (default: 21600, Only used with Docker.)                                  | 21600                            |
 | `OUTPUT_FILE`     | Output file name (default: xmltv.xml)                                                                           | xmltv.xml                        |
 | `APPEND_ASTERISK` | Set `TRUE` to add * to Programs that are New or Live                                                            | FALSE                            |
+| `MEDIA_PORTAL`    | Set `TRUE` to list `<episode-num system="xmltv_ns">` tag before others to display   |                                  | 
 
 ### Command line arguments
 
@@ -93,12 +99,13 @@ See [Environment variables](#environment-variables) for configuration options.
 | `--lineupId`       | Lineup ID; Read more in the [Wiki](https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID)                    | `USA-lineupId-DEFAULT` (Attenna) |
 | `--timespan`       | Timespan in hours (up to 360 = 15 days, default: 6)                                                             | 6                                |
 | `--pref`           | User Preferences, comma separated list. `m` for showing music, `p` for showing pay-per-view, `h` for showing HD | (empty)                          |
-| `--country`        | Country code (default: `USA`)                                                                                   | USA                              |
+| `--country`        | Country code (default: `USA`) see Allowed Country List for options                 | USA                              |
 | `--postalCode`     | Postal code of where shows are available.                                                                       | 30309                            |
 | `--userAgent`      | Custom user agent string for HTTP requests.                                                                     | Uses random if not specified     |
 | `--timezone`       | Timezone                                                                                                        | System default                   |
 | `--outputFile`     | Output file name (default: xmltv.xml)                                                                           | xmltv.xml                        |
 | `--appendAsterisk` | Add * after Program name labeled New and/or Live                                                                |                                  |
+| `--mediaportal`    | List `<episode-num system="xmltv_ns">` tag first to display Season/Episode on Media Portal                      |                                  |
 
 ## Setup and running in intervals
 
