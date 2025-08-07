@@ -37,9 +37,3 @@ These changes are currently on the [jesmannstl/zap2xml](https://github.com/jesma
 * Updated affiliateId after orbebb stopped working
 
 Updated Docker with these changes use APPEND_ASTERISK: TRUE for the --appendAsterisk option
-Visit https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID
-
-
-
-
-
