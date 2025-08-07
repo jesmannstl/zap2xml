@@ -106,15 +106,44 @@ export function buildProgramsXml(data: GridApiResponse): string {
         xml += `    <desc>${escapeXml(event.program.shortDesc)}</desc>\n`;
       }
 
+// Date logic: releaseYear first, else current date from startTime (America/New_York)
+if (event.program.releaseYear) {
+  xml += `    <date>${escapeXml(event.program.releaseYear)}</date>
+`;
+} else {
+  const nyFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  const parts = nyFormatter.formatToParts(new Date(event.startTime));
+  const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
+  const mm = parts.find(p => p.type === "month")?.value || "01";
+  const dd = parts.find(p => p.type === "day")?.value || "01";
+  xml += `    <date>${year}${mm}${dd}</date>
+`;
+}
+
+
       const genreSet = new Set(event.program.genres?.map(g => g.toLowerCase()) || []);
 
       if (event.program.genres && event.program.genres.length > 0) {
         const sortedGenres = [...event.program.genres].sort((a, b) => a.localeCompare(b));
         for (const genre of sortedGenres) {
           const capitalizedGenre = genre.charAt(0).toUpperCase() + genre.slice(1);
-          xml += `    <category lang="en">${escapeXml(capitalizedGenre)}</category>\n`;
+          xml += `    <category lang="en">${escapeXml(capitalizedGenre)}</category>
+`;
+
         }
       }
+
+      // add <length> after categories
+      if (event.duration) {
+        xml += `    <length units="minutes">${escapeXml(event.duration)}</length>
+`;
+      }
+
 
       if (event.rating) {
         xml += `    <rating system="MPAA"><value>${escapeXml(
@@ -184,8 +213,6 @@ export function buildProgramsXml(data: GridApiResponse): string {
         });
         const parts = nyFormatter.formatToParts(new Date(event.startTime));
         const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
-        const mm = parts.find(p => p.type === "month")?.value || "01";
-        const dd = parts.find(p => p.type === "day")?.value || "01";
         const episodeIdx = parseInt(event.program.episode, 10);
         if (!isNaN(episodeIdx)) {
           const xmltvNsTag = `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
@@ -195,8 +222,7 @@ export function buildProgramsXml(data: GridApiResponse): string {
             episodeNumTags.push(xmltvNsTag);
           }
         }
-        const dateStr = `${year}${mm}${dd}`;
-        xml += `    <date>${dateStr}</date>\n`;
+
       } else if (!event.program.episode && event.program.id) {
         const match = event.program.id.match(/^(..\d{8})(\d{4})/);
         if (match) {
@@ -214,8 +240,6 @@ export function buildProgramsXml(data: GridApiResponse): string {
         const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
         const mm = parts.find(p => p.type === "month")?.value || "01";
         const dd = parts.find(p => p.type === "day")?.value || "01";
-        const dateStr = `${year}${mm}${dd}`;
-        xml += `    <date>${dateStr}</date>\n`;
 
         if (!skipXmltvNs) {
           const mmddNum = parseInt(`${mm}${dd}`, 10);
@@ -234,8 +258,7 @@ export function buildProgramsXml(data: GridApiResponse): string {
       if (event.program.originalAirDate || event.program.episodeAirDate) {
         const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || '');
         if (!isNaN(airDate.getTime())) {
-          const dateStr = airDate.toISOString().slice(0, 10).replace(/-/g, "");
-          xml += `    <date>${dateStr}</date>\n`;
+
           xml += `    <episode-num system="original-air-date">${airDate.toISOString().replace("T", " ").split(".")[0]}</episode-num>\n`;
         }
       }
