@@ -12,6 +12,8 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 # (2025-08-07)
 
+* Moved `<date>` above `<category>` to match original Perl output.  Corrected where Movie Release Year is properly displayed.
+* Added `<length>` tag.
 * Updated channel logo no longer has fixed width so can display in better quality
 
 # (2025-08-06)
@@ -37,3 +39,4 @@ These changes are currently on the [jesmannstl/zap2xml](https://github.com/jesma
 * Updated affiliateId after orbebb stopped working
 
 Updated Docker with these changes use APPEND_ASTERISK: TRUE for the --appendAsterisk option
+
