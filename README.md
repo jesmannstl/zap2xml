@@ -4,6 +4,10 @@ Automate TV guides to XMLTV format. Easy to use, up-to-date. See below for getti
 
 I also *somewhat* maintain a version of the original in the [historical-perl branch](https://github.com/jef/zap2xml/tree/historical-perl) if you're interested in that.
 
+## (2025-08-07)
+
+* Updated channel logo no longer has fixed width so can display in better quality
+
 ## (2025-08-06)
 
 * Added Valid Country Codes that can be used

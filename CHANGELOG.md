@@ -1,6 +1,16 @@
 # Changelog
 
+## (2025-08-07)
+
+* Updated channel logo no longer has fixed width so can display in better quality
+
 ## (2025-08-06)
+
+* Added Valid Country Codes that can be used
+* Added `--mediaportal` option to use `<episode-num system="xmltv_ns">` before others so Media Portal will display Season/Episode properly
+
+
+## (2025-08-05)
 
 ### Changes since previous release
 

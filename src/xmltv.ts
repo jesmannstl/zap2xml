@@ -53,9 +53,14 @@ export function buildChannelsXml(data: GridApiResponse): string {
     }
 
     if (channel.thumbnail) {
-      const src = channel.thumbnail.startsWith("http")
+      let src = channel.thumbnail.startsWith("http")
         ? channel.thumbnail
         : "https:" + channel.thumbnail;
+      // This part removes the ?w=55 from the URL.
+      const queryIndex = src.indexOf('?');
+      if (queryIndex !== -1) {
+        src = src.substring(0, queryIndex);
+      }
       xml += `    <icon src="${escapeXml(src)}" />\n`;
     }
 
