@@ -68,9 +68,9 @@ services:
 For a simple Docker run command:
 
 ```bash
-docker run -d --name zap2xml \\
-  -v /path/to/output:/xmltv \\
-  -e OUTPUT_FILE=/xmltv/xmltv.xml \\
+docker run -d --name zap2xml \
+  -v /path/to/output:/xmltv \
+  -e OUTPUT_FILE=/xmltv/xmltv.xml \
   ghcr.io/jesmannstl/zap2xml:latest
 ```
 
@@ -134,6 +134,7 @@ You can run zap2xml in a Docker container. The `SLEEP_TIME` environment variable
 ### How do I get my Lineup ID?
 
 Visit https://github.com/jef/zap2xml/wiki/Retrieving-Lineup-ID
+
 
 
 
