@@ -76,7 +76,7 @@ export function getConfig() {
       process.argv
         .find((arg) => arg.startsWith("--postalCode="))
         ?.split("=")[1] ||
-      "30309",
+      "-",
     pref:
       process.env["PREF"] ||
       process.argv.find((arg) => arg.startsWith("--pref="))?.split("=")[1] ||

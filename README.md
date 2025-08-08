@@ -12,6 +12,7 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 # (2025-08-07)
 
+* `--postalCode` not required as long as Country and lineup Id correct except Over the Air
 * Moved `<date>` above `<category>` to match original Perl output.  Corrected where Movie Release Year is properly displayed.
 * Added `<length>` tag.
 * Updated channel logo no longer has fixed width so can display in better quality
