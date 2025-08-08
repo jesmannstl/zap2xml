@@ -12,6 +12,7 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 # (2025-08-07)
 
+* Reordered Program fields to match original Perl script output
 * `--postalCode` not required as long as Country and lineup Id correct except Over the Air
 * Moved `<date>` above `<category>` to match original Perl output.  Corrected where Movie Release Year is properly displayed.
 * Added `<length>` tag.

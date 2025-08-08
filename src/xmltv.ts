@@ -144,34 +144,16 @@ if (event.program.releaseYear) {
 `;
       }
 
-
-      if (event.rating) {
-        xml += `    <rating system="MPAA"><value>${escapeXml(
-          event.rating,
-        )}</value></rating>\n`;
+      if (event.thumbnail) {
+        const src = event.thumbnail.startsWith("http")
+          ? event.thumbnail
+          : "https://zap2it.tmsimg.com/assets/" + event.thumbnail + ".jpg";
+        xml += `    <icon src="${escapeXml(src)}" />\n`;
       }
 
-      if (isNew) xml += `    <new />\n`;
-      if (isLive) xml += `    <live />\n`;
-      if (event.flag?.includes("Premiere")) xml += `    <premiere />\n`;
-      if (event.flag?.includes("Finale")) xml += `    <last-chance />\n`;
-
-      if (!isNew && !isLive && event.program.id && matchesPreviouslyShownPattern(event.program.id)) {
-        xml += `    <previously-shown`;
-        if (event.program.originalAirDate) {
-          const date = convOAD(event.program.originalAirDate);
-          xml += ` start="${date}000000"`;
-        }
-        xml += ` />\n`;
-      }
-
-      if (event.tags && event.tags.length > 0) {
-        if (event.tags.includes("Stereo")) {
-          xml += `    <audio type="stereo" />\n`;
-        }
-        if (event.tags.includes("CC")) {
-          xml += `    <subtitles type="teletext" />\n`;
-        }
+      if (event.program.seriesId && event.program.tmsId) {
+        const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${event.program.tmsId}`;
+        xml += `    <url>${encodedUrl}</url>\n`;
       }
 
       const skipXmltvNs = genreSet.has("movie") || genreSet.has("sports");
@@ -263,16 +245,33 @@ if (event.program.releaseYear) {
         }
       }
 
-      if (event.program.seriesId && event.program.tmsId) {
-        const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${event.program.tmsId}`;
-        xml += `    <url>${encodedUrl}</url>\n`;
+      if (isNew) xml += `    <new />\n`;
+      if (isLive) xml += `    <live />\n`;
+      if (event.flag?.includes("Premiere")) xml += `    <premiere />\n`;
+      if (event.flag?.includes("Finale")) xml += `    <last-chance />\n`;
+
+      if (!isNew && !isLive && event.program.id && matchesPreviouslyShownPattern(event.program.id)) {
+        xml += `    <previously-shown`;
+        if (event.program.originalAirDate) {
+          const date = convOAD(event.program.originalAirDate);
+          xml += ` start="${date}000000"`;
+        }
+        xml += ` />\n`;
       }
 
-      if (event.thumbnail) {
-        const src = event.thumbnail.startsWith("http")
-          ? event.thumbnail
-          : "https://zap2it.tmsimg.com/assets/" + event.thumbnail + ".jpg";
-        xml += `    <icon src="${escapeXml(src)}" />\n`;
+      if (event.tags && event.tags.length > 0) {
+        if (event.tags.includes("Stereo")) {
+          xml += `    <audio type="stereo" />\n`;
+        }
+        if (event.tags.includes("CC")) {
+          xml += `    <subtitles type="teletext" />\n`;
+        }
+      }
+
+      if (event.rating) {
+        xml += `    <rating system="MPAA"><value>${escapeXml(
+          event.rating,
+        )}</value></rating>\n`;
       }
 
       xml += "  </programme>\n";
