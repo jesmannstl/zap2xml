@@ -10,6 +10,10 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 # Recent updates
 
+# (2025-08-09)
+
+* Fixed Sorting so output is listed by Channel ID (common station/gracenote id) then by date/time.
+
 # (2025-08-07)
 
 * Reordered Program fields to match original Perl script output

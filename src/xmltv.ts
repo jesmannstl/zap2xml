@@ -24,23 +24,28 @@ export function formatDate(dateStr: string): string {
 
 const cli = new Command();
 cli
-  .option('--appendAsterisk', 'Append * to titles with <new /> or <live />')
-  .option('--mediaportal', 'Prioritize xmltv_ns episode-num tags')
-  .option('--lineupId <lineupId>', 'Lineup ID')
-  .option('--timespan <hours>', 'Timespan in hours (up to 360)', '6')
-  .option('--pref <prefs>', 'User Preferences, e.g. m,p,h')
-  .option('--country <code>', 'Country code', 'USA')
-  .option('--postalCode <zip>', 'Postal code', '30309')
-  .option('--userAgent <agent>', 'Custom user agent string')
-  .option('--timezone <zone>', 'Timezone')
-  .option('--outputFile <filename>', 'Output file name', 'xmltv.xml');
+  .option("--appendAsterisk", "Append * to titles with <new /> or <live />")
+  .option("--mediaportal", "Prioritize xmltv_ns episode-num tags")
+  .option("--lineupId <lineupId>", "Lineup ID")
+  .option("--timespan <hours>", "Timespan in hours (up to 360)", "6")
+  .option("--pref <prefs>", "User Preferences, e.g. m,p,h")
+  .option("--country <code>", "Country code", "USA")
+  .option("--postalCode <zip>", "Postal code", "30309")
+  .option("--userAgent <agent>", "Custom user agent string")
+  .option("--timezone <zone>", "Timezone")
+  .option("--outputFile <filename>", "Output file name", "xmltv.xml");
 cli.parse(process.argv);
 const options = cli.opts() as { [key: string]: any };
 
 export function buildChannelsXml(data: GridApiResponse): string {
   let xml = "";
 
-  for (const channel of data.channels) {
+  // Sort channels by channelId for deterministic <channel> order
+  const sortedChannels = [...data.channels].sort((a, b) =>
+    a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" })
+  );
+
+  for (const channel of sortedChannels) {
     xml += `  <channel id="${escapeXml(channel.channelId)}">\n`;
     xml += `    <display-name>${escapeXml(channel.callSign)}</display-name>\n`;
 
@@ -56,8 +61,8 @@ export function buildChannelsXml(data: GridApiResponse): string {
       let src = channel.thumbnail.startsWith("http")
         ? channel.thumbnail
         : "https:" + channel.thumbnail;
-      // This part removes the ?w=55 from the URL.
-      const queryIndex = src.indexOf('?');
+      // Strip any query string like ?w=55
+      const queryIndex = src.indexOf("?");
       if (queryIndex !== -1) {
         src = src.substring(0, queryIndex);
       }
@@ -80,68 +85,68 @@ export function buildProgramsXml(data: GridApiResponse): string {
     return originalAirDate.replace(/-/g, "");
   };
 
-  for (const channel of data.channels) {
-    for (const event of channel.events) {
+  // Sort channels by channelId so <programme> blocks group by channel
+  const sortedChannels = [...data.channels].sort((a, b) =>
+    a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" })
+  );
+
+  for (const channel of sortedChannels) {
+    // Sort events by startTime within each channel
+    const sortedEvents = [...channel.events].sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+
+    for (const event of sortedEvents) {
       xml += `  <programme start="${formatDate(
-        event.startTime,
-      )}" stop="${formatDate(event.endTime)}" channel="${escapeXml(
-        channel.channelId,
-      )}">\n`;
+        event.startTime
+      )}" stop="${formatDate(event.endTime)}" channel="${escapeXml(channel.channelId)}">\n`;
 
       const isNew = event.flag?.includes("New");
       const isLive = event.flag?.includes("Live");
       let title = event.program.title;
-      if (options['appendAsterisk'] && (isNew || isLive)) {
+      if (options["appendAsterisk"] && (isNew || isLive)) {
         title += " *";
       }
       xml += `    <title>${escapeXml(title)}</title>\n`;
 
       if (event.program.episodeTitle) {
-        xml += `    <sub-title>${escapeXml(
-          event.program.episodeTitle,
-        )}</sub-title>\n`;
+        xml += `    <sub-title>${escapeXml(event.program.episodeTitle)}</sub-title>\n`;
       }
 
       if (event.program.shortDesc) {
         xml += `    <desc>${escapeXml(event.program.shortDesc)}</desc>\n`;
       }
 
-// Date logic: releaseYear first, else current date from startTime (America/New_York)
-if (event.program.releaseYear) {
-  xml += `    <date>${escapeXml(event.program.releaseYear)}</date>
-`;
-} else {
-  const nyFormatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
-  const parts = nyFormatter.formatToParts(new Date(event.startTime));
-  const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
-  const mm = parts.find(p => p.type === "month")?.value || "01";
-  const dd = parts.find(p => p.type === "day")?.value || "01";
-  xml += `    <date>${year}${mm}${dd}</date>
-`;
-}
+      // Date logic: releaseYear first, else current date from startTime (America/New_York)
+      if (event.program.releaseYear) {
+        xml += `    <date>${escapeXml(event.program.releaseYear)}</date>\n`;
+      } else {
+        const nyFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+        const parts = nyFormatter.formatToParts(new Date(event.startTime));
+        const year = parseInt(parts.find((p) => p.type === "year")?.value || "1970", 10);
+        const mm = parts.find((p) => p.type === "month")?.value || "01";
+        const dd = parts.find((p) => p.type === "day")?.value || "01";
+        xml += `    <date>${year}${mm}${dd}</date>\n`;
+      }
 
-
-      const genreSet = new Set(event.program.genres?.map(g => g.toLowerCase()) || []);
+      const genreSet = new Set(event.program.genres?.map((g) => g.toLowerCase()) || []);
 
       if (event.program.genres && event.program.genres.length > 0) {
         const sortedGenres = [...event.program.genres].sort((a, b) => a.localeCompare(b));
         for (const genre of sortedGenres) {
           const capitalizedGenre = genre.charAt(0).toUpperCase() + genre.slice(1);
-          xml += `    <category lang="en">${escapeXml(capitalizedGenre)}</category>
-`;
-
+          xml += `    <category lang="en">${escapeXml(capitalizedGenre)}</category>\n`;
         }
       }
 
-      // add <length> after categories
+      // Add <length> after categories
       if (event.duration) {
-        xml += `    <length units="minutes">${escapeXml(event.duration)}</length>
-`;
+        xml += `    <length units="minutes">${escapeXml(event.duration)}</length>\n`;
       }
 
       if (event.thumbnail) {
@@ -151,36 +156,34 @@ if (event.program.releaseYear) {
         xml += `    <icon src="${escapeXml(src)}" />\n`;
       }
 
+      // Optional series link
       if (event.program.seriesId && event.program.tmsId) {
         const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${event.program.tmsId}`;
         xml += `    <url>${encodedUrl}</url>\n`;
       }
 
       const skipXmltvNs = genreSet.has("movie") || genreSet.has("sports");
-      const episodeNumTags = [];
+      const episodeNumTags: string[] = [];
 
       if (event.program.season && event.program.episode && !skipXmltvNs) {
-        const onscreenTag = `    <episode-num system="onscreen">${escapeXml(
-          `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
-        )}</episode-num>\n`;
-        episodeNumTags.push(onscreenTag);
-
-        const commonTag = `    <episode-num system="common">${escapeXml(
-          `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`,
-        )}</episode-num>\n`;
-        episodeNumTags.push(commonTag);
+        const onscreen = `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(
+          2,
+          "0"
+        )}`;
+        episodeNumTags.push(`    <episode-num system="onscreen">${escapeXml(onscreen)}</episode-num>\n`);
+        episodeNumTags.push(`    <episode-num system="common">${escapeXml(onscreen)}</episode-num>\n`);
 
         if (/\.\d{8}\d{4}/.test(event.program.id)) {
-          const ddProgIdTag = `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`;
-          episodeNumTags.push(ddProgIdTag);
+          episodeNumTags.push(
+            `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`
+          );
         }
 
         const seasonNum = parseInt(event.program.season, 10);
         const episodeNum = parseInt(event.program.episode, 10);
-
         if (!isNaN(seasonNum) && !isNaN(episodeNum) && seasonNum >= 1 && episodeNum >= 1) {
           const xmltvNsTag = `    <episode-num system="xmltv_ns">${seasonNum - 1}.${episodeNum - 1}.</episode-num>\n`;
-          if (options['mediaportal']) {
+          if (options["mediaportal"]) {
             episodeNumTags.unshift(xmltvNsTag);
           } else {
             episodeNumTags.push(xmltvNsTag);
@@ -191,43 +194,43 @@ if (event.program.releaseYear) {
           timeZone: "America/New_York",
           year: "numeric",
           month: "2-digit",
-          day: "2-digit"
+          day: "2-digit",
         });
         const parts = nyFormatter.formatToParts(new Date(event.startTime));
-        const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
+        const year = parseInt(parts.find((p) => p.type === "year")?.value || "1970", 10);
         const episodeIdx = parseInt(event.program.episode, 10);
         if (!isNaN(episodeIdx)) {
           const xmltvNsTag = `    <episode-num system="xmltv_ns">${year - 1}.${episodeIdx - 1}.0/1</episode-num>\n`;
-          if (options['mediaportal']) {
+          if (options["mediaportal"]) {
             episodeNumTags.unshift(xmltvNsTag);
           } else {
             episodeNumTags.push(xmltvNsTag);
           }
         }
-
       } else if (!event.program.episode && event.program.id) {
-        const match = event.program.id.match(/^(..\d{8})(\d{4})/);
+        const match = event.program.id.match(/^(.\d{8})(\d{4})/);
         if (match) {
-          const ddProgIdTag = `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`;
-          episodeNumTags.push(ddProgIdTag);
+          episodeNumTags.push(
+            `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`
+          );
         }
 
         const nyFormatter = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/New_York",
           year: "numeric",
           month: "2-digit",
-          day: "2-digit"
+          day: "2-digit",
         });
         const parts = nyFormatter.formatToParts(new Date(event.startTime));
-        const year = parseInt(parts.find(p => p.type === "year")?.value || "1970", 10);
-        const mm = parts.find(p => p.type === "month")?.value || "01";
-        const dd = parts.find(p => p.type === "day")?.value || "01";
+        const year = parseInt(parts.find((p) => p.type === "year")?.value || "1970", 10);
+        const mm = parts.find((p) => p.type === "month")?.value || "01";
+        const dd = parts.find((p) => p.type === "day")?.value || "01";
 
         if (!skipXmltvNs) {
           const mmddNum = parseInt(`${mm}${dd}`, 10);
-          const mmddMinusOne = (mmddNum - 1).toString().padStart(4, '0');
+          const mmddMinusOne = (mmddNum - 1).toString().padStart(4, "0");
           const xmltvNsTag = `    <episode-num system="xmltv_ns">${year - 1}.${mmddMinusOne}.</episode-num>\n`;
-          if (options['mediaportal']) {
+          if (options["mediaportal"]) {
             episodeNumTags.unshift(xmltvNsTag);
           } else {
             episodeNumTags.push(xmltvNsTag);
@@ -238,10 +241,14 @@ if (event.program.releaseYear) {
       xml += episodeNumTags.join("");
 
       if (event.program.originalAirDate || event.program.episodeAirDate) {
-        const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || '');
+        const airDate = new Date(
+          event.program.episodeAirDate || event.program.originalAirDate || ""
+        );
         if (!isNaN(airDate.getTime())) {
-
-          xml += `    <episode-num system="original-air-date">${airDate.toISOString().replace("T", " ").split(".")[0]}</episode-num>\n`;
+          xml += `    <episode-num system="original-air-date">${airDate
+            .toISOString()
+            .replace("T", " ")
+            .split(".")[0]}</episode-num>\n`;
         }
       }
 
@@ -269,9 +276,7 @@ if (event.program.releaseYear) {
       }
 
       if (event.rating) {
-        xml += `    <rating system="MPAA"><value>${escapeXml(
-          event.rating,
-        )}</value></rating>\n`;
+        xml += `    <rating system="MPAA"><value>${escapeXml(event.rating)}</value></rating>\n`;
       }
 
       xml += "  </programme>\n";
@@ -285,7 +290,8 @@ export function buildXmltv(data: GridApiResponse): string {
   console.log("Building XMLTV file");
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<tv generator-info-name="jef/zap2xml" generator-info-url="https://github.com/jef/zap2xml">\n';
+  xml +=
+    '<tv generator-info-name="jef/zap2xml" generator-info-url="https://github.com/jef/zap2xml">\n';
   xml += buildChannelsXml(data);
   xml += buildProgramsXml(data);
   xml += "</tv>\n";
