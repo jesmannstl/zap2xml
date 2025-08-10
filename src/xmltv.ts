@@ -37,6 +37,13 @@ cli
 cli.parse(process.argv);
 const options = cli.opts() as { [key: string]: any };
 
+// Helper to mimic Perl dd_progid emission: (..########)(####) -> XX########.####
+function toDdProgid(rawId: string | undefined | null): string | null {
+  if (!rawId) return null;
+  const m = rawId.match(/^(.{2}\d{8})(\d{4})$/);
+  return m ? `${m[1]}.${m[2]}` : null;
+}
+
 export function buildChannelsXml(data: GridApiResponse): string {
   let xml = "";
 
@@ -156,28 +163,25 @@ export function buildProgramsXml(data: GridApiResponse): string {
         xml += `    <icon src="${escapeXml(src)}" />\n`;
       }
 
-      // Optional series link
-      if (event.program.seriesId && event.program.tmsId) {
-        const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${event.program.tmsId}`;
+      if (event.program.seriesId && (event.program as any).tmsId) {
+        const encodedUrl = `https://tvlistings.gracenote.com//overview.html?programSeriesId=${event.program.seriesId}&amp;tmsId=${(event.program as any).tmsId}`;
         xml += `    <url>${encodedUrl}</url>\n`;
       }
 
       const skipXmltvNs = genreSet.has("movie") || genreSet.has("sports");
       const episodeNumTags: string[] = [];
 
+      // ---- dd_progid (Perl behavior) — compute once, independent of season/episode presence
+      const ddProgid = toDdProgid(event.program.id);
+      if (ddProgid) {
+        episodeNumTags.push(`    <episode-num system="dd_progid">${escapeXml(ddProgid)}</episode-num>\n`);
+      }
+      // ----------------------------------------------------------------------
+
       if (event.program.season && event.program.episode && !skipXmltvNs) {
-        const onscreen = `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(
-          2,
-          "0"
-        )}`;
+        const onscreen = `S${event.program.season.padStart(2, "0")}E${event.program.episode.padStart(2, "0")}`;
         episodeNumTags.push(`    <episode-num system="onscreen">${escapeXml(onscreen)}</episode-num>\n`);
         episodeNumTags.push(`    <episode-num system="common">${escapeXml(onscreen)}</episode-num>\n`);
-
-        if (/\.\d{8}\d{4}/.test(event.program.id)) {
-          episodeNumTags.push(
-            `    <episode-num system="dd_progid">${escapeXml(event.program.id)}</episode-num>\n`
-          );
-        }
 
         const seasonNum = parseInt(event.program.season, 10);
         const episodeNum = parseInt(event.program.episode, 10);
@@ -208,13 +212,7 @@ export function buildProgramsXml(data: GridApiResponse): string {
           }
         }
       } else if (!event.program.episode && event.program.id) {
-        const match = event.program.id.match(/^(.\d{8})(\d{4})/);
-        if (match) {
-          episodeNumTags.push(
-            `    <episode-num system="dd_progid">${match[1]}.${match[2]}</episode-num>\n`
-          );
-        }
-
+        // No season/episode — xmltv_ns based on MMDD (only if not movie/sports)
         const nyFormatter = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/New_York",
           year: "numeric",
@@ -241,9 +239,7 @@ export function buildProgramsXml(data: GridApiResponse): string {
       xml += episodeNumTags.join("");
 
       if (event.program.originalAirDate || event.program.episodeAirDate) {
-        const airDate = new Date(
-          event.program.episodeAirDate || event.program.originalAirDate || ""
-        );
+        const airDate = new Date(event.program.episodeAirDate || event.program.originalAirDate || "");
         if (!isNaN(airDate.getTime())) {
           xml += `    <episode-num system="original-air-date">${airDate
             .toISOString()
@@ -290,8 +286,7 @@ export function buildXmltv(data: GridApiResponse): string {
   console.log("Building XMLTV file");
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml +=
-    '<tv generator-info-name="jef/zap2xml" generator-info-url="https://github.com/jef/zap2xml">\n';
+  xml += '<tv generator-info-name="jef/zap2xml" generator-info-url="https://github.com/jef/zap2xml">\n';
   xml += buildChannelsXml(data);
   xml += buildProgramsXml(data);
   xml += "</tv>\n";
