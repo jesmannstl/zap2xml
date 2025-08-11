@@ -1,12 +1,12 @@
-### zap2xml
+# zap2xml
 
 Automate TV guides to XMLTV format. Easy to use, up-to-date. See below for getting started.
 
 I also *somewhat* maintain a version of the original in the [historical-perl branch](https://github.com/jesmannstl/zap2xml/tree/historical-perl) if you're interested in that.
 
-### First Time [Installation in node.js](https://github.com/jesmannstl/zap2xml/wiki/Installation), [How to Run](https://github.com/jesmannstl/zap2xml/wiki/How-to-Run), [Scheduling](https://github.com/jesmannstl/zap2xml/wiki/Scheduling) or [using Docker](https://github.com/jesmannstl/zap2xml/wiki/Using-Docker) see [Wiki](https://github.com/jesmannstl/zap2xml/wiki) for instructions 
+## First Time [Installation in node.js](https://github.com/jesmannstl/zap2xml/wiki/Installation), [How to Run](https://github.com/jesmannstl/zap2xml/wiki/How-to-Run), [Scheduling](https://github.com/jesmannstl/zap2xml/wiki/Scheduling) or [using Docker](https://github.com/jesmannstl/zap2xml/wiki/Using-Docker) see [Wiki](https://github.com/jesmannstl/zap2xml/wiki) for instructions 
 
-## Need help? [Finding a lineup](https://github.com/jesmannstl/zap2xml/wiki/Finding-a-Lineup-ID) or for [Dish and DirecTV lineups](https://github.com/jesmannstl/zap2xml/wiki/US-Dish-Directv-Lineups).  Other help? Drop a line in the [Discussions](https://github.com/jesmannstl/zap2xml/discussions)
+### Need help? [Finding a lineup](https://github.com/jesmannstl/zap2xml/wiki/Finding-a-Lineup-ID) or for [Dish and DirecTV lineups](https://github.com/jesmannstl/zap2xml/wiki/US-Dish-Directv-Lineups).  Other help? Drop a line in the [Discussions](https://github.com/jesmannstl/zap2xml/discussions)
 
 # Recent updates
 
@@ -46,5 +46,6 @@ These changes are currently on the [jesmannstl/zap2xml](https://github.com/jesma
 * Updated affiliateId after orbebb stopped working
 
 Updated Docker with these changes use APPEND_ASTERISK: TRUE for the --appendAsterisk option
+
 
 
