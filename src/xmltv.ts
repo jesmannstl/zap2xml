@@ -33,9 +33,11 @@ cli
   .option("--postalCode <zip>", "Postal code", "30309")
   .option("--userAgent <agent>", "Custom user agent string")
   .option("--timezone <zone>", "Timezone")
-  .option("--outputFile <filename>", "Output file name", "xmltv.xml");
+  .option("--outputFile <filename>", "Output file name", "xmltv.xml")
+  .option("--nextpvr", "Move \"channelNo callsign\" display-name to first position");
 cli.parse(process.argv);
 const options = cli.opts() as { [key: string]: any };
+const useNextPvr = Boolean(options["nextpvr"]) || ((process.env["NEXTPVR"] || "").toLowerCase() == "true");
 
 // Helper to mimic Perl dd_progid emission: (..########)(####) -> XX########.####
 function toDdProgid(rawId: string | undefined | null): string | null {
@@ -54,18 +56,26 @@ export function buildChannelsXml(data: GridApiResponse): string {
 
   for (const channel of sortedChannels) {
     xml += `  <channel id="${escapeXml(channel.channelId)}">\n`;
-    xml += `    <display-name>${escapeXml(channel.callSign)}</display-name>\n`;
-    if (channel.channelNo) {
-      xml += `    <display-name>${escapeXml(channel.channelNo + ' ' + channel.callSign)}</display-name>\n`;
-    }
-
-
-    if (channel.affiliateName) {
-      xml += `    <display-name>${escapeXml(channel.affiliateName)}</display-name>\n`;
-    }
-
-    if (channel.channelNo) {
-      xml += `    <display-name>${escapeXml(channel.channelNo)}</display-name>\n`;
+        // Build display-name list with optional NextPVR ordering
+    {
+      const displayNames: string[] = [];
+      if (useNextPvr && channel.channelNo) {
+        displayNames.push(`${channel.channelNo} ${channel.callSign}`);
+      }
+      displayNames.push(channel.callSign);
+      if (!useNextPvr && channel.channelNo) {
+        displayNames.push(`${channel.channelNo} ${channel.callSign}`);
+      }
+      if (channel.affiliateName) {
+        displayNames.push(channel.affiliateName);
+      }
+      if (channel.channelNo) {
+        displayNames.push(channel.channelNo);
+      }
+      for (const name of displayNames) {
+        xml += `    <display-name>${escapeXml(name)}</display-name>
+`;
+      }
     }
 
     if (channel.thumbnail) {

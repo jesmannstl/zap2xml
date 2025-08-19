@@ -14,6 +14,7 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 * Changed URL pull to match output from page when stopped working
 * Added Display Name with Channel Number and Call Sign to mirror previous Perl Script
+* Added `--nextpvr` option to list Channel Number Call Sign first
 
 # (2025-08-09)
 
