@@ -51,25 +51,28 @@ export interface GridApiResponse {
 }
 
 function buildUrl(time: number, timespan: number): string {
-  const params = {
-    lineupId: config.lineupId,
-    timespan: timespan.toString(),
-    headendId: config.headendId,
-    country: config.country,
-    timezone: config.timezone,
-    postalCode: config.postalCode,
-    isOverride: "true",
-    pref: config.pref + "16,128" || "16,128",
-    aid: "chi",
-    languagecode: "en-us",
-    time: time.toString(),
-    device: config.lineupId.includes("X") ? "X" : "-",
-    userId: "-",
-  };
+  // Build query string in a fixed order; timezone is intentionally left blank.
+  const orderedParams: Array<[string, string]> = [
+    ["lineupId", config.lineupId],
+    ["timespan", timespan.toString()],
+    ["headendId", config.headendId],
+    ["country", config.country],
+    ["timezone", ""], // no longer used
+    ["device", config.lineupId.includes("X") ? "X" : "-"],
+    ["postalCode", config.postalCode],
+    ["isOverride", "true"],
+    ["time", time.toString()],
+    ["pref", "16,128"],
+    ["userId", "-"],
+    ["aid", "chi"],
+    ["languagecode", "en-us"],
+  ];
 
-  const urlParams = new URLSearchParams(params).toString();
+  const query = orderedParams
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
 
-  return `${config.baseUrl}?${urlParams}`;
+  return `${config.baseUrl}?${query}`;
 }
 
 export async function getTVListings(): Promise<GridApiResponse> {
