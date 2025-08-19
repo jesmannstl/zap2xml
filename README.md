@@ -10,6 +10,11 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 # Recent updates
 
+# (2025-08-18)
+
+* Changed URL pull to match output from page when stopped working
+* Added Display Name with Channel Number and Call Sign to mirror previous Perl Script
+
 # (2025-08-09)
 
 * Restored `<episode-num system="dd_progid">` tag that Plex uses that was missing.

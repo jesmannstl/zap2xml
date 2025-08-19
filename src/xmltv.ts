@@ -55,6 +55,10 @@ export function buildChannelsXml(data: GridApiResponse): string {
   for (const channel of sortedChannels) {
     xml += `  <channel id="${escapeXml(channel.channelId)}">\n`;
     xml += `    <display-name>${escapeXml(channel.callSign)}</display-name>\n`;
+    if (channel.channelNo) {
+      xml += `    <display-name>${escapeXml(channel.channelNo + ' ' + channel.callSign)}</display-name>\n`;
+    }
+
 
     if (channel.affiliateName) {
       xml += `    <display-name>${escapeXml(channel.affiliateName)}</display-name>\n`;
