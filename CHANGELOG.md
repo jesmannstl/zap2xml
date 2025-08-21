@@ -1,7 +1,22 @@
 # Changelog
 
-## (2025-08-07)
+# (2025-08-18)
 
+* Changed URL pull to match output from page when stopped working
+* Added Display Name with Channel Number and Call Sign to mirror previous Perl Script
+* Added `--nextpvr` option to list Channel Number Call Sign first
+
+# (2025-08-09)
+
+* Restored `<episode-num system="dd_progid">` tag that Plex uses that was missing.
+* Fixed Sorting so output is listed by Channel ID (common station/gracenote id) then by date/time.
+
+# (2025-08-07)
+
+* Reordered Program fields to match original Perl script output
+* `--postalCode` not required as long as Country and lineup Id correct except Over the Air
+* Moved `<date>` above `<category>` to match original Perl output.  Corrected where Movie Release Year is properly displayed.
+* Added `<length>` tag.
 * Updated channel logo no longer has fixed width so can display in better quality
 
 ## (2025-08-06)
