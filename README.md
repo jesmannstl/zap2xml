@@ -10,6 +10,12 @@ I also *somewhat* maintain a version of the original in the [historical-perl bra
 
 # Recent updates
 
+# (2025-08-20)
+
+* Changed default Sort option to the Channel Number in Lineup if available
+* Added '--stationid' to sort the previous way by StationID
+* Added `--sortname` to sort by the Call Sign
+
 # (2025-08-18)
 
 * Changed URL pull to match output from page when stopped working

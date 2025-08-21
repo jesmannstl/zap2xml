@@ -34,10 +34,55 @@ cli
   .option("--userAgent <agent>", "Custom user agent string")
   .option("--timezone <zone>", "Timezone")
   .option("--outputFile <filename>", "Output file name", "xmltv.xml")
-  .option("--nextpvr", "Move \"channelNo callsign\" display-name to first position");
+  .option("--nextpvr", "Move \"channelNo callsign\" display-name to first position")
+  .option("--stationid", "Sort channels by station ID (legacy behavior)")
+  .option("--sortname", "Sort channels alphabetically by call sign/name");
 cli.parse(process.argv);
 const options = cli.opts() as { [key: string]: any };
-const useNextPvr = Boolean(options["nextpvr"]) || ((process.env["NEXTPVR"] || "").toLowerCase() == "true");
+const useNextPvr = Boolean(options["nextpvr"]) || ((process.env["NEXTPVR"] || "").toLowerCase() === "true");
+const useStationId = Boolean(options["stationid"]) || ((process.env["STATIONID"] || "").toLowerCase() === "true");
+const useSortName = Boolean(options["sortname"]) || ((process.env["SORTNAME"] || "").toLowerCase() === "true");
+
+// Helper: parse channel numbers like "2.1", "10-2", "702" into number segments
+function parseChannelNo(no: string | null | undefined): number[] {
+  const s = (no || "").toString();
+  return s.split(/[^\d]+/).filter(Boolean).map((n) => parseInt(n, 10));
+}
+
+// Shared comparator honoring --sortname, --stationid, else numeric channelNo
+function channelComparator(a: any, b: any): number {
+  if (useSortName) {
+    const aName = (a.callSign || a.affiliateName || "").toString();
+    const bName = (b.callSign || b.affiliateName || "").toString();
+    const c = aName.localeCompare(bName, undefined, { sensitivity: "base", numeric: true });
+    if (c !== 0) return c;
+    return a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" });
+  }
+  if (useStationId) {
+    return a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" });
+  }
+  const aNo = (a.channelNo || "").trim();
+  const bNo = (b.channelNo || "").trim();
+  const aHas = aNo.length > 0;
+  const bHas = bNo.length > 0;
+  if (aHas && !bHas) return -1;
+  if (!aHas && bHas) return 1;
+  if (aHas && bHas) {
+    const ap = parseChannelNo(aNo);
+    const bp = parseChannelNo(bNo);
+    const len = Math.max(ap.length, bp.length);
+    for (let i = 0; i < len; i++) {
+      const av = ap[i] ?? 0;
+      const bv = bp[i] ?? 0;
+      if (av !== bv) return av - bv;
+    }
+    const cmpNo = aNo.localeCompare(bNo, undefined, { numeric: true, sensitivity: "base" });
+    if (cmpNo !== 0) return cmpNo;
+    return a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" });
+  }
+  return a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" });
+}
+
 
 // Helper to mimic Perl dd_progid emission: (..########)(####) -> XX########.####
 function toDdProgid(rawId: string | undefined | null): string | null {
@@ -50,9 +95,7 @@ export function buildChannelsXml(data: GridApiResponse): string {
   let xml = "";
 
   // Sort channels by channelId for deterministic <channel> order
-  const sortedChannels = [...data.channels].sort((a, b) =>
-    a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" })
-  );
+  const sortedChannels = [...data.channels].sort(channelComparator);
 
   for (const channel of sortedChannels) {
     xml += `  <channel id="${escapeXml(channel.channelId)}">\n`;
@@ -73,8 +116,7 @@ export function buildChannelsXml(data: GridApiResponse): string {
         displayNames.push(channel.channelNo);
       }
       for (const name of displayNames) {
-        xml += `    <display-name>${escapeXml(name)}</display-name>
-`;
+        xml += `    <display-name>${escapeXml(name)}</display-name>\n`;
       }
     }
 
@@ -97,7 +139,6 @@ export function buildChannelsXml(data: GridApiResponse): string {
 
 export function buildProgramsXml(data: GridApiResponse): string {
   let xml = "";
-
   const matchesPreviouslyShownPattern = (programId: string): boolean => {
     return /^EP|^SH|^\d/.test(programId);
   };
@@ -107,9 +148,7 @@ export function buildProgramsXml(data: GridApiResponse): string {
   };
 
   // Sort channels by channelId so <programme> blocks group by channel
-  const sortedChannels = [...data.channels].sort((a, b) =>
-    a.channelId.localeCompare(b.channelId, undefined, { numeric: true, sensitivity: "base" })
-  );
+  const sortedChannels = [...data.channels].sort(channelComparator);
 
   for (const channel of sortedChannels) {
     // Sort events by startTime within each channel
