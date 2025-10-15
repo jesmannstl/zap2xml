@@ -1,6 +1,9 @@
 import type { GridApiResponse } from "./tvlistings.js";
 import { Command } from "commander";
 
+// TF 10/2025 Add node.js module needed for helper function.
+import assert from "assert";
+
 export function escapeXml(unsafe: string): string {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -91,6 +94,18 @@ function toDdProgid(rawId: string | undefined | null): string | null {
   return m ? `${m[1]}.${m[2]}` : null;
 }
 
+// TF 10/2025 Impement an internal deepStrictEqual function to compare to objects.
+// Helper to compare two objects.
+
+function isIdentical(obj1: any, obj2: any): boolean {
+  try {
+    assert.deepStrictEqual(obj1,obj2);
+  } catch(error) {
+    return false
+  }
+return true
+}
+
 export function buildChannelsXml(data: GridApiResponse): string {
   let xml = "";
 
@@ -155,8 +170,19 @@ export function buildProgramsXml(data: GridApiResponse): string {
     const sortedEvents = [...channel.events].sort(
       (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
+// TF 10/2025 Impement duplicate checking and skip duplicate entries.
 
-    for (const event of sortedEvents) {
+    //for (const event of sortedEvents) {
+    for (let i=0; i<sortedEvents.length; i++) {
+      let event = sortedEvents[i]!;
+
+      if (i>0) {
+        let pevent = sortedEvents[(i-1)]!;
+        if (isIdentical(event, pevent)) {
+          continue
+        }
+      }
+
       xml += `  <programme start="${formatDate(
         event.startTime
       )}" stop="${formatDate(event.endTime)}" channel="${escapeXml(channel.channelId)}">\n`;
