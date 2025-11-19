@@ -178,7 +178,7 @@ export async function getTVListings(): Promise<GridApiResponse> {
             if (config.mergedOutput) {
               for (const newEvent of processedEvents) {
                 const existingEventIndex = existingChannel.events.findIndex(
-                  existingEvent => existingEvent.startTime === newEvent.startTime && existingEvent.callSign === newEvent.callSign
+                  existingEvent => existingEvent.startTime === newEvent.startTime
                 );
                 
                 if (existingEventIndex !== -1) {
