@@ -94,10 +94,11 @@ export async function getTVListings(): Promise<GridApiResponse> {
     } catch (error) {
       console.warn('Failed to load channels cache:', error);
     }
+
     const currentTime = now;
     let removedEventsCount = 0;
     
-    for (const [channelId, channel] of channelsMap) {
+    for (const [channelId, channel] of channelsMap) {``
       // Remove events where both startTime and endTime are in the past
       channel.events = channel.events.filter(event => {
         // Parse endTime from string to epoch timestamp
@@ -105,7 +106,10 @@ export async function getTVListings(): Promise<GridApiResponse> {
         if (isPastEvent) removedEventsCount++;
         return !isPastEvent;
       });
-      
+      if(channel && (channel.events === null || channel.events?.length === 0)) {
+        channelsMap.delete(channelId);
+        continue;
+      }
       channelsMap.set(channelId, channel);
     }
     
