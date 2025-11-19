@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import * as fs from "fs";
 
 const config = getConfig();
 
@@ -81,6 +82,38 @@ export async function getTVListings(): Promise<GridApiResponse> {
   const now = Math.floor(Date.now() / 1000);
   const channelsMap: Map<string, Channel> = new Map();
 
+  // Load existing channels data if mergedOutput is enabled and cache file exists
+  if (config.mergedOutput === true && fs.existsSync('channels-cache.json')) {
+    try {
+      const cachedData = fs.readFileSync('channels-cache.json', 'utf8');
+      const channelsEntries: [string, Channel][] = JSON.parse(cachedData);
+      for (const [key, value] of channelsEntries) {
+        channelsMap.set(key, value);
+      }
+      console.log(`Loaded ${channelsMap.size} channels from cache`);
+    } catch (error) {
+      console.warn('Failed to load channels cache:', error);
+    }
+    const currentTime = now;
+    let removedEventsCount = 0;
+    
+    for (const [channelId, channel] of channelsMap) {
+      // Remove events where both startTime and endTime are in the past
+      channel.events = channel.events.filter(event => {
+        // Parse endTime from string to epoch timestamp
+        const isPastEvent = Math.floor(new Date(event.endTime).getTime() / 1000) < currentTime;
+        if (isPastEvent) removedEventsCount++;
+        return !isPastEvent;
+      });
+      
+      channelsMap.set(channelId, channel);
+    }
+    
+    if (removedEventsCount > 0) {
+      console.log(`Removed ${removedEventsCount} past events from cached data`);
+    }
+  }
+
   console.log(`Fetching ${totalHours} hours of TV listings in ${chunkHours}-hour chunks...`);
 
   const fetchPromises: Promise<void>[] = [];
@@ -141,7 +174,22 @@ export async function getTVListings(): Promise<GridApiResponse> {
             });
           } else {
             const existingChannel = channelsMap.get(newChannel.channelId)!;
-            existingChannel.events.push(...processedEvents);
+            
+            if (config.mergedOutput) {
+              for (const newEvent of processedEvents) {
+                const existingEventIndex = existingChannel.events.findIndex(
+                  existingEvent => existingEvent.startTime === newEvent.startTime && existingEvent.callSign === newEvent.callSign
+                );
+                
+                if (existingEventIndex !== -1) {
+                  existingChannel.events[existingEventIndex] = newEvent;
+                } else {
+                  existingChannel.events.push(newEvent);
+                }
+              }
+            } else {
+              existingChannel.events.push(...processedEvents);
+            }
           }
         }
       })
@@ -157,5 +205,12 @@ export async function getTVListings(): Promise<GridApiResponse> {
   await Promise.all(fetchPromises);
 
   console.log(`Completed fetching TV listings. Total unique channels: ${channelsMap.size}`);
+  
+  if (config.mergedOutput === true) {
+    const channelsData = JSON.stringify(Array.from(channelsMap.entries()), null, 2);
+    fs.writeFileSync('channels-cache.json', channelsData, 'utf8');
+    console.log('Serialized channels data to channels-cache.json');
+  }
+  
   return { channels: Array.from(channelsMap.values()) };
 }

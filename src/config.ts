@@ -71,6 +71,7 @@ export function getConfig() {
         ?.split("=")[1] ||
       "72",
     country,
+    mergedOutput: process.env["MERGED_OUTPUT"] === "true" || process.argv.includes("--mergedOutput"),
     postalCode:
       process.env["POSTAL_CODE"] ||
       process.argv
