@@ -39,7 +39,8 @@ cli
   .option("--outputFile <filename>", "Output file name", "xmltv.xml")
   .option("--nextpvr", "Move \"channelNo callsign\" display-name to first position")
   .option("--stationid", "Sort channels by station ID (legacy behavior)")
-  .option("--sortname", "Sort channels alphabetically by call sign/name");
+  .option("--sortname", "Sort channels alphabetically by call sign/name")
+  .option("--mergedOutput", "Merge with existing content if present");
 cli.parse(process.argv);
 const options = cli.opts() as { [key: string]: any };
 const useNextPvr = Boolean(options["nextpvr"]) || ((process.env["NEXTPVR"] || "").toLowerCase() === "true");
