@@ -141,7 +141,7 @@ export function buildChannelsXml(data: GridApiResponse): string {
         : "https:" + channel.thumbnail;
 
       // New line to replace the hostname
-      src = src.replace("zap2it.tmsimg.com", "emby.tmsimg.com");
+      src = src.replace("zap2it.tmsimg.com", "zpmc.tmsimg.com");
 
       // Strip any query string like ?w=55
       const queryIndex = src.indexOf("?");
@@ -240,9 +240,10 @@ export function buildProgramsXml(data: GridApiResponse): string {
       }
 
       if (event.thumbnail) {
-        const src = event.thumbnail.startsWith("http")
-          ? event.thumbnail
-          : "https://emby.tmsimg.com/assets/" + event.thumbnail + ".jpg";
+        let src = event.thumbnail.startsWith("http")
+            ? event.thumbnail
+            : "https://zpmc.tmsimg.com/assets/" + event.thumbnail + ".jpg";
+        src = src.replace("zap2it.tmsimg.com", "zpmc.tmsimg.com"); 
         xml += `    <icon src="${escapeXml(src)}" />\n`;
       }
 
