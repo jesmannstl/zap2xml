@@ -1,3 +1,7 @@
+Replaced emby.tmsimg.com with zpmc.tmsimg.com
+Replaced zap2it.tmsimg.com with zpmc.tmsimg.com
+
+
 # zap2xml
 
 Automate TV guides to XMLTV format. Easy to use, up-to-date. See below for getting started.
